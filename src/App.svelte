@@ -1,7 +1,7 @@
 <script>
-  import Quiz from './lib/Quiz.svelte';
+	import Quiz from './lib/Quiz.svelte';
 </script>
 
 <div id="center">
-  <Quiz />
+	<Quiz />
 </div>
