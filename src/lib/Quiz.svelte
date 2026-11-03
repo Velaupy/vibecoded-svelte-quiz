@@ -1,15 +1,48 @@
 <script>
 	import { questions } from './quizData.js';
 
-	let currentIndex = $state(0);
-	let selectedAnswer = $state(null);
-	let answered = $state(false);
-	let score = $state(0);
-	let finished = $state(false);
-	let answerStatus = $state(null); // 'correct' | 'wrong' | null
+	const STORAGE_KEY = 'svelte-quiz-state';
+
+	function loadState() {
+		try {
+			const raw = localStorage.getItem(STORAGE_KEY);
+			if (!raw) return null;
+			const parsed = JSON.parse(raw);
+			if (
+				parsed &&
+				typeof parsed.currentIndex === 'number' &&
+				typeof parsed.answered === 'boolean' &&
+				typeof parsed.score === 'number' &&
+				typeof parsed.finished === 'boolean'
+			) {
+				return parsed;
+			}
+		} catch (e) {
+			// ignore corrupted state
+		}
+		return null;
+	}
+
+	const saved = loadState();
+
+	let currentIndex = $state(saved ? Math.min(saved.currentIndex, questions.length - 1) : 0);
+	let selectedAnswer = $state(saved ? saved.selectedAnswer ?? null : null);
+	let answered = $state(saved ? saved.answered : false);
+	let score = $state(saved ? saved.score : 0);
+	let finished = $state(saved ? saved.finished : false);
+	let answerStatus = $state(saved ? saved.answerStatus ?? null : null);
 
 	const total = questions.length;
-	const current = $derived(questions[currentIndex]);
+
+	$effect(() => {
+		const state = { currentIndex, selectedAnswer, answered, score, finished, answerStatus };
+		try {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+		} catch (e) {
+			// ignore write errors (e.g. storage full)
+		}
+	});
+	const current = $derived(questions[currentIndex] ?? questions[0]);
 	const progress = $derived(Math.round(((currentIndex + (answered ? 1 : 0)) / total) * 100));
 
 	function selectAnswer(index) {
